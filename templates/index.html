@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot - Bihar Electricity Dept</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    
+    <style>
+        body { background-color: #f4f4f4; font-family: Arial, sans-serif; }
+        .chatbot-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 28px;
+            animation: bounce 1.5s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .chat-container {
+            width: 400px;
+            height: 500px;
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        .chat-header {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-box {
+            height: 370px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+        .chat-footer {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            align-items: center;
+        }
+        .chat-footer input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .chat-footer button, .chat-footer label {
+            margin-left: 5px;
+            padding: 8px 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .chat-footer label {
+            background: #28a745;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .user-message {
+            background: #d1ecf1;
+            text-align: right;
+        }
+        .bot-message {
+            background: #c3e6cb;
+        }
+        #audio-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chatbot-icon" id="chatbot-icon">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header">
+            <span><i class="fas fa-robot"></i>  𝕽𝖆𝖍𝖚𝖑 ✍ 𝙰𝙸 𝙲𝚑𝚊𝚝𝚋𝚘𝚝</span>
+            <span style="cursor: pointer;" onclick="toggleChat()">&times;</span>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <div class="message bot-message">Bot: Hello! How can I help you? 😊</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+            <label for="audio-input"><i class="fas fa-microphone"></i></label>
+            <input type="file" id="audio-input" accept="audio/*" onchange="recordAudio()">
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            let chat = document.getElementById("chat-container");
+            chat.style.display = (chat.style.display === "none" || chat.style.display === "") ? "block" : "none";
+        }
+
+        document.getElementById("chatbot-icon").addEventListener("click", function() {
+            toggleChat();
+        });
+
+        function sendMessage() {
+            let userMessage = document.getElementById("user-input").value.trim();
+            let chatBox = document.getElementById("chat-box");
+            if (userMessage === "") return;
+
+            chatBox.innerHTML += `<div class='message user-message'>You: ${userMessage}</div>`;
+            document.getElementById("user-input").value = "";
+
+            $.post("/chat/", { message: userMessage }, function(response) {
+                chatBox.innerHTML += `<div class='message bot-message'>Bot: ${response.reply}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+
+        function recordAudio() {
+            let audioInput = document.getElementById("audio-input").files[0];
+            if (!audioInput) return;
+
+            let chatBox = document.getElementById("chat-box");
+            let formData = new FormData();
+            formData.append("audio", audioInput);
+
+            chatBox.innerHTML += `<div class='message user-message'>🎤 Processing audio...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            fetch("/speech-to-text/", {
+                method: "POST",
+                body: formData
+            }).then(response => response.json()).then(data => {
+                if (data.text) {
+                    document.getElementById("user-input").value = data.text;
+                    chatBox.innerHTML += `<div class='message bot-message'>Bot: Recognized Speech - "${data.text}"</div>`;
+                } else {
+                    chatBox.innerHTML += `<div class='message bot-message'>Bot: Error in speech recognition.</div>`;
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }).catch(() => {
+                chatBox.innerHTML += `<div class='message bot-message'>Bot: Failed to process audio.</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+    </script>
+
+</body>
+</html>
