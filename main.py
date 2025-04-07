@@ -13,8 +13,8 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 # Load Excel Data
-billing_df = pd.read_excel(r"C:\Users\rahul.k\Downloads\master table data.xlsx")
-complaints_df = pd.read_excel(r"C:\Users\rahul.k\Downloads\comlpaiyts.xlsx")
+billing_df = pd.read_excel("master table data.xlsx")
+complaints_df = pd.read_excel("comlpaiyts.xlsx")
 
 
 def detect_language(text: str) -> str:
